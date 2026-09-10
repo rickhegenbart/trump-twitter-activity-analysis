@@ -1,0 +1,133 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(tidyverse)
+library(DT)
+library(plotly)               # This package does interactive graphs
+library(rtweet)               # This package accesses Twitter data
+library(lubridate)  
+```
+
+```{r}
+token <- create_token(
+app ="",
+consumer_key = "",
+consumer_secret = "",
+access_token = "",
+access_secret = "")
+
+get_token()        # this shows the token. make sure key is the same as consumer_key above
+```
+
+```{r}
+realDonaldTrump <- get_timeline("Trump", n = 10000)
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+realDonaldTrump %>% 
+  select(hashtags) %>%                   # Focus on the hashtags
+  unnest() %>%                           # Separate multiple hashtags
+  mutate(hashtags = tolower(hashtags)) %>%      # make all hashtags lowercase
+  count(hashtags, sort=TRUE) %>%                # count how often they appear
+  datatable()                                   # create an interactive table
+```
+This is a table that shows in decending order Trumps most popular hashtags.
+
+```{r echo=TRUE}
+realDonaldTrump %>% 
+  group_by(day = date(created_at)) %>%    # extract the date, group by it
+  summarize(tweets_per_day = n())         # count the number of tweets each day
+```
+This is a table showing the number of tweets by day from Donald Trump.
+
+```{r echo=TRUE}
+realDonaldTrump %>% 
+  group_by(day = date(created_at)) %>%    # extract the date, group by it
+  summarize(tweets_per_day = n())  %>%
+  summarize(mean(tweets_per_day))# count the number of tweets each day
+```
+This is the mean number of tweets per day by Donald Trump.
+
+```{r echo=TRUE}
+realDonaldTrump %>%
+  mutate(day = date(created_at)) %>% 
+  plot_ly(x = ~day) %>%                                        
+  add_histogram() %>% 
+  layout(title = "Number of tweets from realDonaldTrump")
+```
+This is a graph showing the number of tweets per day from Doanald Trump using a (plotly) function in Rstudio.
+
+```{r}
+tz(realDonaldTrump$created_at)
+
+```
+```{r}
+realDonaldTrump %>% 
+  mutate(time = with_tz(created_at, "America/New_York")) %>% 
+  mutate(time = hour(time)) %>% 
+  count(time) %>% 
+  datatable(options = (list(pageLength = 24)), rownames = F)
+```
+This table show the peak tweeting hours for Donald Trump.
+
+```{r}
+realDonaldTrump %>% 
+  mutate(time = with_tz(created_at, "America/New_York")) %>%    # convert to Eastern time zone
+  mutate(time = hour(time)) %>%                                 # extract the hour
+  plot_ly(x = ~time) %>%                                        # create plotly graph
+  add_histogram()    %>%
+  layout(title = "When Does realDonaldTrump Tweet?", 
+         xaxis = list(title = "Time of Day (0 = midnight)"),
+         yaxis = list(title = "Number of Tweets"))# make histogram
+```
+This is a histogram showing the peak tweeting hours for Donald Trump.
+```{r}
+realDonaldTrump %>% 
+  mutate(Day = wday(created_at,           # find the weekday that the tweet was created
+                    label = T)) %>%       # use labels (Sun, Mon, etc) rather than numbers
+  count(Day) %>%                          # count the number of tweets each day
+  datatable(rownames = F)
+```
+This is a table that shows by weekdays, tweets from Donald Trump.
+
+```{r}
+realDonaldTrump %>% 
+  mutate(Day = wday(created_at,           # find the weekday that the tweet was created
+                    label = T)) %>%       # use labels (Sun, Mon, etc) rather than numbers
+  plot_ly(x = ~Day) %>%
+            add_histogram() %>%
+  layout(title = "realDonaldTrump Tweet By Week?", 
+         xaxis = list(title = "By Day"),
+         yaxis = list(title = "Number of Tweets"))# make histogram
+```
+This is a histogram showing Donald Trumps tweets by the days of the week.
+
+
+```{r}
+realDonaldTrump %>% 
+  mutate(day = wday(created_at, label = T)) %>% 
+  mutate(hour = hour(with_tz(created_at, "America/New_York"))) %>% 
+  plot_ly(x = ~day, y = ~hour) %>% 
+  add_histogram2d(nbinsx = 7, nbinsy = 24) %>%
+  layout(title = "When Does realDonaldTrump Tweet?", 
+         xaxis = list(title = "Day of the week"),
+         yaxis = list(title = "Time of day ( 0 = midnight"))
+```
+This is a heat map that acts as a 2D graph. It shows both by week and time of the day that Donald Trump tweets.
+
+
+
+
+
+
+
+
+
+
+
